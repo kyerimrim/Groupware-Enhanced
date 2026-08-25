@@ -7,6 +7,7 @@
 	<name>GroupWare Maven Webapp</name>
 	<url>http://maven.apache.org</url>
 	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.test.skip>true</maven.test.skip>
 		<java-version>17</java-version>
 		<org.springframework-version>5.3.27</org.springframework-version>
