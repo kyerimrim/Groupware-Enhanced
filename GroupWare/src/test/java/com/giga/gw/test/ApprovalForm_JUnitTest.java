@@ -3,6 +3,7 @@ package com.giga.gw.test;
 import static org.junit.Assert.assertNotEquals;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,15 +47,17 @@ public class ApprovalForm_JUnitTest {
 				.build();
 		assertNotEquals(0, approvalFormService.formUpdate(approvalFormDto));
 	}
-	// 결재양식 DELETE
+	// 결재양식 사용 여부 변경
 //	@Test
-	public void deleteTest() {
-		assertNotEquals(0, approvalFormDao.formDelete("HR021"));
+	public void updateUseYNTest() {
+		Map<String, Object> params = Map.of("id", "HR021", "use_yn", "N");
+		assertNotEquals(0, approvalFormDao.formUpdateUseYN(params));
 	}
 	
 	@Test
 	public void selectAllTest() {
-		List<ApprovalFormDto> lists = approvalFormDao.formSelectAll();
+		Map<String, Object> params = Map.of("first", 1, "last", 10);
+		List<ApprovalFormDto> lists = approvalFormDao.formSelectAll(params);
 		assertNotEquals(0, lists.size());
 	}
 
