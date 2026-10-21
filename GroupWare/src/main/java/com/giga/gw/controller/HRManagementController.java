@@ -9,7 +9,12 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import com.giga.gw.util.ProfileImageValidator;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -41,6 +46,7 @@ public class HRManagementController {
 		EmployeeDto loginDto = (EmployeeDto)session.getAttribute("loginDto");
 		log.info("로그인 사번 : {}", loginDto);
 		model.addAttribute("employee", loginDto);
+		model.addAttribute("profileImage", employeeDao.getProfileImage(String.valueOf(loginDto.getEmpno())));
 		return "mypage";
 	}
 	
@@ -72,18 +78,33 @@ public class HRManagementController {
 	}
 	
 	// 사원 등록 - 사원 등록
-	@PostMapping("/employeeAdd.do")
+	@PostMapping(value = "/employeeAdd.do", consumes = "multipart/form-data",
+			produces = "text/plain;charset=UTF-8")
 	@ResponseBody
-	public String employeeResist(@RequestBody Map<String, Object> map, 
-								HttpSession session) {
+	public ResponseEntity<String> employeeResist(@RequestPart("employee") Map<String, Object> map,
+			@RequestPart(value = "profileImage", required = false) MultipartFile profileImage,
+			HttpSession session) throws java.io.IOException {
 		EmployeeDto loginDto = (EmployeeDto)session.getAttribute("loginDto");
+		if (loginDto == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
+		try {
+			map.put("profileImage", ProfileImageValidator.encode(profileImage));
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		}
 		map.put("create_emp", loginDto.getEmpno());
 		String empno = (String) map.get("empno");
 		map.put("password", empno);
-		System.out.println("hiredate: " + map.get("hiredate"));
-		System.out.println("birthday: " + map.get("birthday"));
-		log.info("비밀번호{}", empno);
-		return employeeDao.insertEmployee(map)==1 ? "true":"false";
+		return employeeDao.insertEmployee(map) == 1
+				? ResponseEntity.ok("true")
+				: ResponseEntity.status(500).body("사원 등록에 실패했습니다.");
+	}
+
+	@ExceptionHandler(MaxUploadSizeExceededException.class)
+	@ResponseBody
+	public ResponseEntity<String> uploadTooLarge() {
+		return ResponseEntity.status(413)
+				.contentType(org.springframework.http.MediaType.parseMediaType("text/plain;charset=UTF-8"))
+				.body("이미지는 5MB 이하로 선택해주세요.");
 	}
 	
 	//조직도
