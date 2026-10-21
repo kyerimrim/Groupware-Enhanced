@@ -116,9 +116,12 @@ select.box {
             <div class="col-md-4">
                 <div class="profile">
                     <div class="col-md-8 col-lg-9">
-                       <img id="profile-img" src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" alt="기본이미지">
+                       <img id="profile-img" src="<c:url value='/resources/images/default-profile.svg'/>" alt="사원 프로필 미리보기">
                         <div class="pt-2">
-                            <input class="form-control" type="file" id="formFile">
+                            <label for="formFile">프로필 이미지 (선택)</label>
+                            <input class="form-control" type="file" id="formFile" accept="image/jpeg,image/png">
+                            <small>JPG·PNG, 최대 5MB / 1,600만 화소</small>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetProfileImage()">이미지 취소</button>
                         </div>
                     </div>
                 </div>
@@ -248,14 +251,54 @@ select.box {
         </div>
 
         <div class="text-center">
-            <button type="button" class="btn btn-primary" onclick="saveEmployee()">등록</button>
-            <button type="button" class="btn btn-secondary" onclick="document.getElementById('myForm').reset(); document.getElementById('myForm2').reset();">초기화</button>
+            <button type="button" id="saveEmployeeButton" class="btn btn-primary" onclick="saveEmployee()">등록</button>
+            <button type="button" class="btn btn-secondary" onclick="resetEmployeeForm()">초기화</button>
         </div>
     </div>
 </div>
 </main>
 </body>
 <script>
+const profileInput = document.getElementById('formFile');
+const profilePreview = document.getElementById('profile-img');
+const defaultProfileImage = profilePreview.src;
+let profilePreviewUrl;
+
+function resetProfileImage() {
+    if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
+    profilePreviewUrl = null;
+    profileInput.value = '';
+    profilePreview.src = defaultProfileImage;
+}
+
+function resetEmployeeForm() {
+    document.getElementById('myForm').reset();
+    document.getElementById('myForm2').reset();
+    resetProfileImage();
+}
+
+profileInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) {
+        resetProfileImage();
+        return;
+    }
+    if (!['image/jpeg', 'image/png'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+        alert('JPG 또는 PNG 이미지(5MB 이하)를 선택해주세요.');
+        resetProfileImage();
+        return;
+    }
+    if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
+    profilePreviewUrl = URL.createObjectURL(file);
+    profilePreview.src = profilePreviewUrl;
+});
+profilePreview.addEventListener('error', function() {
+    if (profilePreviewUrl) {
+        alert('이미지를 읽을 수 없습니다. 다른 파일을 선택해주세요.');
+        resetProfileImage();
+    }
+});
+
 // 생년월일
 document.addEventListener('DOMContentLoaded', function() {
     // 연도 드롭다운
@@ -367,22 +410,10 @@ function updateEmpno(hiredate) {
     });
 }
 
-// 폼 제출 전 유효성 검사
-document.getElementById('employeeForm').addEventListener('submit', function(event) {
-  const empno = document.getElementById('empno');
-  
-  // 사번이 생성되지 않았으면 제출 방지
-  if (!empno || !empno.value) {
-    event.preventDefault();
-    alert('입사일자를 먼저 선택하여 사번을 생성해주세요.');
-    return false;
-  }
-  
-  // 기타 필수 필드 검증 로직 추가 가능
-});
-
 //값 보내기
 function saveEmployee() {
+    const saveButton = document.getElementById('saveEmployeeButton');
+    if (saveButton.disabled) return;
     
     const empno = document.getElementById('empno').value;
     const name = document.getElementById('name').value;
@@ -390,12 +421,13 @@ function saveEmployee() {
     // 생년월일 값
     const birthYear = document.getElementById('birth-year').options[document.getElementById("birth-year").selectedIndex].value;
     const birthMonth = document.getElementById('birth-month').options[document.getElementById('birth-month').selectedIndex].value;
-    const birthDate = document.getElementById('birth-day').options[document.getElementById('birth-month').selectedIndex].value;
+    const birthDate = document.getElementById('birth-day').value;
     
     const formattedMonth = String(birthMonth).padStart(2, '0');
     const formattedDay = String(birthDate).padStart(2, '0');
     
-    const birthday = birthYear +"-"+formattedMonth+"-"+formattedDay;
+    const birthday = /^\d{4}$/.test(birthYear) && /^\d{1,2}$/.test(birthMonth)
+        && /^\d{1,2}$/.test(birthDate) ? birthYear +"-"+formattedMonth+"-"+formattedDay : '';
     
     const degree = document.getElementById('degree').value;
     
@@ -420,16 +452,10 @@ function saveEmployee() {
     const deptno = document.querySelector('select[name="deptno"]').value;
     const job_id = document.getElementById("job_id").value;
     
-    // 유효성 검사
-//     if (!name) {
-//         alert('이름을 입력해주세요.');
-//         return;
-//     }
-    
-//     if (!hiredate) {
-//         alert('입사일자를 입력해주세요.');
-//         return;
-//     }
+    if (!empno || !hiredate || !name.trim()) {
+        alert('이름과 입사일자를 입력하고 사번 생성을 확인해주세요.');
+        return;
+    }
 
     const data = {
     	empno : empno,
@@ -450,24 +476,27 @@ function saveEmployee() {
         auth: '',
     };
     
-    console.log('전송할 데이터:', data); 
+    const formData = new FormData();
+    formData.append('employee', new Blob([JSON.stringify(data)], {type: 'application/json'}));
+    if (profileInput.files[0]) formData.append('profileImage', profileInput.files[0]);
+    saveButton.disabled = true;
     
     // 서버로 데이터 전송
     fetch('./employeeAdd.do', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
+        body: formData
     })
-    .then(response => {
-        if (response.ok) {
-            return response.text();
+    .then(async response => {
+        const result = await response.text();
+        if (!response.ok || result.trim() !== 'true') {
+            throw new Error(response.status === 400 || response.status === 413
+                ? result : '사원 등록에 실패했습니다. 로그인 상태와 입력 정보를 확인해주세요.');
         }
-        throw new Error('사원 등록에 실패했습니다.');
+        return result;
     })
     .then(data => {
         alert("사원이 등록되었습니다.");
+        resetEmployeeForm();
         // 폼 초기화 또는 리다이렉트
         // document.querySelector('form').reset();
         // window.location.href = "employeeList.do";
@@ -475,7 +504,8 @@ function saveEmployee() {
     .catch(error => {
         alert(error.message);
         console.error('에러 발생:', error);
-    });
+    })
+    .finally(() => { saveButton.disabled = false; });
 }
 
 
