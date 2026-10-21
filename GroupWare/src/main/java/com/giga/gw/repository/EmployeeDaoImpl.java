@@ -19,6 +19,11 @@ public class EmployeeDaoImpl implements IEmployeeDao {
 	
 	private final SqlSessionTemplate sql;
 	private final String NS = "com.giga.gw.repository.EmployeeDaoImpl.";
+
+	@Override
+	public String getProfileImage(String empno) {
+		return sql.selectOne(NS + "getProfileImage", empno);
+	}
 	
 	@Override
 	public boolean saveSignature(Map<String, Object> map) {

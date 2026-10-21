@@ -38,7 +38,11 @@
 		        <div class="col-xl-4">
 		          <div class="card">
 		          	<div class="card-body profile-card pt-4 d-flex flex-column align-items-center">
-		          	<img id="profile-img" src="https://yt3.googleusercontent.com/xydasbAktJl4OMRQGV2mEy1Rvf5Y9miqlmVsdIR0Y14rm3fHCOstsYmMlD8MLm7PletRrJr_FiI=s160-c-k-c0x00ffffff-no-rj" alt="기본이미지">
+                    <c:url var="defaultProfileImage" value="/resources/images/default-profile.svg"/>
+                    <img id="profile-img"
+                         src="<c:out value='${empty profileImage ? defaultProfileImage : profileImage}'/>"
+                         onerror="this.onerror=null;this.src='${defaultProfileImage}';"
+                         alt="사원 프로필 이미지">
 		              <h4>${employee.name}</h4>
 		            </div>
 		          </div>

@@ -6,6 +6,7 @@ import java.util.Map;
 import com.giga.gw.dto.EmployeeDto;
 
 public interface IEmployeeDao {
+	String getProfileImage(String empno);
 	boolean saveSignature(Map<String, Object> map);
 	List<Map<String, Object>> readSignature(String empno);
 	int updateSignature(String empno);

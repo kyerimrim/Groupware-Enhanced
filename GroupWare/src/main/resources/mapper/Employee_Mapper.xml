@@ -36,18 +36,22 @@
     <insert id="insertEmployee">
         INSERT INTO EMPLOYEES
         (EMPNO, DEPTNO, JOB_ID, NAME,
-        EMAIL, PASSWORD, PHONE,
+        EMAIL, PASSWORD, PROFILE_IMAGE, PHONE,
         TEL, HIREDATE, BIRTHDAY,
         GENDER, SCHOOL, MAJOR_CODE,
         "DEGREE", ADRESS, AUTH, CREATE_DATE, CREATE_EMP, HR_STATUS, USE_YN)
         VALUES
         (#{empno}, #{deptno}, #{job_id}, #{name},
-        #{email}, #{password}, #{phone},
+        #{email}, #{password}, #{profileImage,jdbcType=CLOB,typeHandler=org.apache.ibatis.type.ClobTypeHandler}, #{phone},
         #{tel}, TO_DATE(#{hiredate}, 'YYYY-MM-DD'), TO_DATE(#{birthday}, 'YYYY-MM-DD'),
         #{gender}, #{school}, #{major_code},
-        #{degree}, #{adress}, 'U', TO_DATE(SYSDATE, 'YYYY-MM-DD'), #{create_emp},
+        #{degree}, #{adress}, 'U', SYSDATE, #{create_emp},
         'HS02', 'Y')
     </insert>
+
+    <select id="getProfileImage" resultType="string">
+        SELECT PROFILE_IMAGE FROM EMPLOYEES WHERE EMPNO = #{empno}
+    </select>
     
     <!-- 사원리스트 조회 -->
     <select id="employeeList" resultType="EmployeeDto">

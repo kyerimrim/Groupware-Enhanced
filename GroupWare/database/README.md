@@ -1,5 +1,9 @@
 # 로컬 Oracle 스키마 복원
 
+기존 DB에 사원 이미지 기능을 추가할 경우 `02_profile_image.sql`을 한 번 실행하여
+`EMPLOYEES.PROFILE_IMAGE` CLOB 컬럼을 추가합니다. 최신 `01_schema.sql`로 생성한 DB에는
+이미 포함되어 있으므로 실행하지 않습니다. 이 컬럼은 JPG/PNG의 Base64 data URL을 저장합니다.
+
 `01_schema.sql`은 DTO 16개와 Mapper 14개를 대조해 작성한 **복원용 초기 스키마**입니다. 원본 DDL이나 DB 덤프가 아니므로 원본과 동일한 구조라고 보장하지 않습니다.
 
 ## 실행 방법
